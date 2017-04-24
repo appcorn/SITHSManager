@@ -1,42 +1,22 @@
-#
-# Be sure to run `pod lib lint SITHSManager.podspec' to ensure this is a
-# valid spec before submitting.
-#
-# Any lines starting with a # are optional, but their use is encouraged
-# To learn more about a Podspec see http://guides.cocoapods.org/syntax/podspec.html
-#
-
 Pod::Spec.new do |s|
   s.name             = 'SITHSManager'
   s.version          = '0.1.0'
-  s.summary          = 'A short description of SITHSManager.'
-
-# This description is used to generate tags and improve search results.
-#   * Think: What does it do? Why did you write it? What is the focus?
-#   * Try to keep it short, snappy and to the point.
-#   * Write the description between the DESC delimiters below.
-#   * Finally, don't worry about the indent, CocoaPods strips it!
+  s.summary          = 'SITHS Smart Card manager module.'
 
   s.description      = <<-DESC
-TODO: Add long description of the pod here.
+iOS helper classes used for reading and parsing the basic contents of Swedish SITHS identification smart cards with a Precise Biometrics card reader.
                        DESC
 
-  s.homepage         = 'https://github.com/Martin Alleus/SITHSManager'
-  # s.screenshots     = 'www.example.com/screenshots_1', 'www.example.com/screenshots_2'
+  s.homepage         = 'https://github.com/appcorn/SITHSManager'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
   s.author           = { 'Martin Alleus' => 'martin@appcorn.se' }
-  s.source           = { :git => 'https://github.com/Martin Alleus/SITHSManager.git', :tag => s.version.to_s }
-  # s.social_media_url = 'https://twitter.com/<TWITTER_USERNAME>'
+  s.source           = { :git => 'https://github.com/appcorn/SITHSManager.git', :tag => s.version.to_s }
 
   s.ios.deployment_target = '8.0'
 
-  s.source_files = 'SITHSManager/Classes/**/*'
+  s.source_files = ['SITHSManager/Classes/**/*', 'Precise/include/*.h']
   
-  # s.resource_bundles = {
-  #   'SITHSManager' => ['SITHSManager/Assets/*.png']
-  # }
+  s.ios.vendored_frameworks = 'Precise.framework'
 
-  # s.public_header_files = 'Pod/Classes/**/*.h'
-  # s.frameworks = 'UIKit', 'MapKit'
-  # s.dependency 'AFNetworking', '~> 2.3'
+  s.frameworks = 'AudioToolbox'
 end

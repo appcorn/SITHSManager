@@ -43,10 +43,10 @@
 		6395F30471BCF8679819A031 /* Pods-SITHSManager_Example.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SITHSManager_Example.debug.xcconfig"; path = "Pods/Target Support Files/Pods-SITHSManager_Example/Pods-SITHSManager_Example.debug.xcconfig"; sourceTree = "<group>"; };
 		6A4BCA4B80408FC92834DB43 /* Pods-SITHSManager_Tests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SITHSManager_Tests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-SITHSManager_Tests/Pods-SITHSManager_Tests.debug.xcconfig"; sourceTree = "<group>"; };
 		7E76EE640A3DB89CDEC4B231 /* Pods_SITHSManager_Tests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_SITHSManager_Tests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		8180CEC0D9B5B0AE319DD69C /* SITHSManager.podspec */ = {isa = PBXFileReference; includeInIndex = 1; name = SITHSManager.podspec; path = ../SITHSManager.podspec; sourceTree = "<group>"; };
+		8180CEC0D9B5B0AE319DD69C /* SITHSManager.podspec */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = SITHSManager.podspec; path = ../SITHSManager.podspec; sourceTree = "<group>"; };
 		9B8270D465294A854E31DCAA /* Pods-SITHSManager_Tests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SITHSManager_Tests.release.xcconfig"; path = "Pods/Target Support Files/Pods-SITHSManager_Tests/Pods-SITHSManager_Tests.release.xcconfig"; sourceTree = "<group>"; };
-		E8D975A8576516A0B2D404ED /* LICENSE */ = {isa = PBXFileReference; includeInIndex = 1; name = LICENSE; path = ../LICENSE; sourceTree = "<group>"; };
-		F325507B55563E5122E53CD6 /* README.md */ = {isa = PBXFileReference; includeInIndex = 1; name = README.md; path = ../README.md; sourceTree = "<group>"; };
+		E8D975A8576516A0B2D404ED /* LICENSE */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = LICENSE; path = ../LICENSE; sourceTree = "<group>"; };
+		F325507B55563E5122E53CD6 /* README.md */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = ../README.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -215,11 +215,15 @@
 				TargetAttributes = {
 					607FACCF1AFB9204008FA782 = {
 						CreatedOnToolsVersion = 6.3.1;
+						DevelopmentTeam = Z6H624DZ3S;
 						LastSwiftMigration = 0820;
+						ProvisioningStyle = Manual;
 					};
 					607FACE41AFB9204008FA782 = {
 						CreatedOnToolsVersion = 6.3.1;
+						DevelopmentTeam = Z6H624DZ3S;
 						LastSwiftMigration = 0820;
+						ProvisioningStyle = Manual;
 						TestTargetID = 607FACCF1AFB9204008FA782;
 					};
 				};
@@ -448,6 +452,7 @@
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 2.3;
 			};
 			name = Debug;
 		};
@@ -487,6 +492,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
+				SWIFT_VERSION = 2.3;
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
@@ -496,12 +502,15 @@
 			baseConfigurationReference = 6395F30471BCF8679819A031 /* Pods-SITHSManager_Example.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				DEVELOPMENT_TEAM = Z6H624DZ3S;
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/../Vendor/Precise/include";
 				INFOPLIST_FILE = SITHSManager/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MODULE_NAME = ExampleApp;
 				PRODUCT_BUNDLE_IDENTIFIER = "org.cocoapods.demo.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 3.0;
+				PROVISIONING_PROFILE = "cc697d2f-c4d2-4452-8899-29f4b06ea2f6";
+				PROVISIONING_PROFILE_SPECIFIER = "Appcorn Wildcard Developer";
 			};
 			name = Debug;
 		};
@@ -510,12 +519,13 @@
 			baseConfigurationReference = 34EB98235A13A9309D9C5BAA /* Pods-SITHSManager_Example.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				DEVELOPMENT_TEAM = "";
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/../Vendor/Precise/include";
 				INFOPLIST_FILE = SITHSManager/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MODULE_NAME = ExampleApp;
 				PRODUCT_BUNDLE_IDENTIFIER = "org.cocoapods.demo.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 3.0;
 			};
 			name = Release;
 		};
@@ -523,6 +533,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 6A4BCA4B80408FC92834DB43 /* Pods-SITHSManager_Tests.debug.xcconfig */;
 			buildSettings = {
+				DEVELOPMENT_TEAM = Z6H624DZ3S;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(SDKROOT)/Developer/Library/Frameworks",
 					"$(inherited)",
@@ -535,7 +546,6 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "org.cocoapods.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 3.0;
 			};
 			name = Debug;
 		};
@@ -543,6 +553,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 9B8270D465294A854E31DCAA /* Pods-SITHSManager_Tests.release.xcconfig */;
 			buildSettings = {
+				DEVELOPMENT_TEAM = Z6H624DZ3S;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(SDKROOT)/Developer/Library/Frameworks",
 					"$(inherited)",
@@ -551,7 +562,6 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "org.cocoapods.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 3.0;
 			};
 			name = Release;
 		};
