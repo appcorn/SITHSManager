@@ -1,0 +1,11 @@
+use_frameworks!
+
+target 'SITHSManager_Example' do
+  pod 'SITHSManager', :path => '../'
+
+  target 'SITHSManager_Tests' do
+    inherit! :search_paths
+
+    
+  end
+end
