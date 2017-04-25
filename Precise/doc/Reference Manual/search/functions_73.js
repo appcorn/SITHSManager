@@ -1,0 +1,26 @@
+var searchData=
+[
+  ['scardbegintransaction',['SCardBeginTransaction',['../group__g__c__api.html#gaddb835dce01a0da1d6ca02d33ee7d861',1,'winscard.h']]],
+  ['scardcancel',['SCardCancel',['../group__g__c__api.html#gaacbbc0c6d6c0cbbeb4f4debf6fbeeee6',1,'winscard.h']]],
+  ['scardconnect',['SCardConnect',['../group__g__c__api.html#ga4e515829752e0a8dbc4d630696a8d6a5',1,'winscard.h']]],
+  ['scardcontrol',['SCardControl',['../group__g__c__api.html#gac3454d4657110fd7f753b2d3d8f4e32f',1,'winscard.h']]],
+  ['scarddisconnect',['SCardDisconnect',['../group__g__c__api.html#ga4be198045c73ec0deb79e66c0ca1738a',1,'winscard.h']]],
+  ['scardendtransaction',['SCardEndTransaction',['../group__g__c__api.html#gae8742473b404363e5c587f570d7e2f3b',1,'winscard.h']]],
+  ['scardestablishcontext',['SCardEstablishContext',['../group__g__c__api.html#gaa1b8970169fd4883a6dc4a8f43f19b67',1,'winscard.h']]],
+  ['scardfreememory',['SCardFreeMemory',['../group__g__c__api.html#ga0522241e3180cb05dfd166e28930e961',1,'winscard.h']]],
+  ['scardgetattrib',['SCardGetAttrib',['../group__g__c__api.html#gaacfec51917255b7a25b94c5104961602',1,'winscard.h']]],
+  ['scardgetstatuschange',['SCardGetStatusChange',['../group__g__c__api.html#ga72ac0cdbe8604948406ca053424aaf1c',1,'winscard.h']]],
+  ['scardisvalidcontext',['SCardIsValidContext',['../group__g__c__api.html#ga722eb66bcc44d391f700ff9065cc080b',1,'winscard.h']]],
+  ['scardlistreadergroups',['SCardListReaderGroups',['../group__g__c__api.html#ga9d970d086d5218e080d0079d63f9d496',1,'winscard.h']]],
+  ['scardlistreaders',['SCardListReaders',['../group__g__c__api.html#ga93b07815789b3cf2629d439ecf20f0d9',1,'winscard.h']]],
+  ['scardreconnect',['SCardReconnect',['../group__g__c__api.html#gad5d4393ca8c470112ad9468c44ed8940',1,'winscard.h']]],
+  ['scardreleasecontext',['SCardReleaseContext',['../group__g__c__api.html#ga6aabcba7744c5c9419fdd6404f73a934',1,'winscard.h']]],
+  ['scardsetattrib',['SCardSetAttrib',['../group__g__c__api.html#ga060f0038a4ddfd5dd2b8fadf3c3a2e4f',1,'winscard.h']]],
+  ['scardstatus',['SCardStatus',['../group__g__c__api.html#ga18f33eebb45d9e0d2a091ca7a0511d26',1,'winscard.h']]],
+  ['scardtransmit',['SCardTransmit',['../group__g__c__api.html#ga9a2d77242a271310269065e64633ab99',1,'winscard.h']]],
+  ['sharedbiometry',['sharedBiometry',['../interface_p_b_biometry.html#a03bf236b77ecb4c652f569171918fe00',1,'PBBiometry']]],
+  ['sharedclass',['sharedClass',['../interface_p_b_accessory.html#afc1f5c45d4d05fc55197ca9221089501',1,'PBAccessory::sharedClass()'],['../interface_p_b_library.html#a01e5be278bf0b2b8cdf62e40d52afdbc',1,'PBLibrary::sharedClass()']]],
+  ['smartcardinserted_3a',['smartcardInserted:',['../interface_p_b_smartcard.html#a85a2ea975db60bf7a6b8011b3c1e4682',1,'PBSmartcard']]],
+  ['smartcardremoved_3a',['smartcardRemoved:',['../interface_p_b_smartcard.html#ae0c83d3d3b2a394d5b4b4117569cc058',1,'PBSmartcard']]],
+  ['stringfromstatus_3a',['stringFromStatus:',['../interface_p_b_biometry.html#ada65b80f810deac4f7ac11fb974c7adf',1,'PBBiometry::stringFromStatus:()'],['../interface_p_b_smartcard.html#ad5f70689919c3bbd8bb1f4b94207d714',1,'PBSmartcard::stringFromStatus:()']]]
+];

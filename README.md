@@ -14,14 +14,7 @@ To run the example project, clone the repo, and run `pod install` from the Examp
 
 ## Requirements
 
-The `SITHSManager` class uses the [Precise Biometrics](https://precisebiometrics.com) iOS Smart Card reader SDK. The SDK files are not included in this library, and needs to be copied in separately. There is a directory, `Precise` that has been prepared for this. Place the Precise SDK files in the `Precise` directory. You will need the following files:
-
-* `Precise/lib/libiOSLibrary.a`
-* `Precise/include/*.h`
-
-After copying in the files, do a `pod update`.
-
-Please also note the special instructions to enable the different "Supported external accessory protocols" in the Precise SDK documentation.
+Note the special instructions to enable the multiple "Supported external accessory protocols" in the Precise SDK documentation.
 
 ## Installation
 

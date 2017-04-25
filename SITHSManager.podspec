@@ -14,9 +14,9 @@ iOS helper classes used for reading and parsing the basic contents of Swedish SI
 
   s.ios.deployment_target = '8.0'
 
-  s.source_files = ['SITHSManager/Classes/**/*', 'Precise/include/*.h']
+  s.source_files = ['SITHSManager/Classes/**/*', 'Precise/include/*.h', 'Precise/lib/*']
   
-  s.ios.vendored_frameworks = 'Precise.framework'
+  s.vendored_frameworks = 'Precise.framework'
 
   s.frameworks = 'AudioToolbox'
 end
