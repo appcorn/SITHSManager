@@ -30,6 +30,12 @@
 	<array>
 		<string>armv7</string>
 	</array>
+	<key>UISupportedExternalAccessoryProtocols</key>
+	<array>
+		<string>com.precisebiometrics.ccidbulk</string>
+		<string>com.precisebiometrics.ccidinterrupt</string>
+		<string>com.precisebiometrics.ccidcontrol</string>
+	</array>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
