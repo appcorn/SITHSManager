@@ -200,6 +200,11 @@ public class SITHSManager {
 
     private func accessoryConnected(notification: NSNotification) {
         log("Accessory Connected Notification")
+        // Ignore accessory connection state notifications when application is not active.
+        if UIApplication.sharedApplication().applicationState != .Active {
+            return
+        }
+
         dispatch_async(smartcardQueue) {
             self.checkSmartcard()
         }
@@ -207,6 +212,11 @@ public class SITHSManager {
 
     private func accessoryDisconnected(notification: NSNotification) {
         log("Accessory Disconnected Notification")
+        // Ignore accessory connection state notifications when application is not active.
+        if UIApplication.sharedApplication().applicationState != .Active {
+            return
+        }
+
         internalState = .ReaderDisconnected
     }
 
@@ -326,13 +336,15 @@ public class SITHSManager {
                 fallthrough
             }
         default:
-            internalState = .Unknown
-
             if retryCount < SmartcardManagerConfiguration.FetchStatusMaxRetries {
+                // Retry connection, do not update state yet
                 retryingConnection = true
                 dispatch_after(dispatch_time(DISPATCH_TIME_NOW, Int64(SmartcardManagerConfiguration.FetchStatusRetryTimeout * Double(NSEC_PER_SEC))), smartcardQueue) {
                     self.checkSmartcard(retryCount + 1)
                 }
+            } else {
+                // Max number of retries, set state to unknown
+                internalState = .Unknown
             }
         }
     }
