@@ -119,6 +119,7 @@ public class SITHSManager {
     private var observers: [ObserverProxy] = []
     private let smartcardQueue: dispatch_queue_t
     private var retryingConnection: Bool = false
+    private var applicationInactive: Bool = false
 
     // Communication objects
     private let smartcard = PBSmartcard()
@@ -173,6 +174,7 @@ public class SITHSManager {
 
     private func applicationDidBecomeActive(notification: NSNotification) {
         log("Application Did Become Active Notification")
+        applicationInactive = false
         dispatch_async(smartcardQueue) {
             self.openSmartcard()
             self.checkSmartcard()
@@ -181,6 +183,7 @@ public class SITHSManager {
 
     private func applicationWillResignActive(notification: NSNotification) {
         log("Application Will Resign Active Notification")
+        applicationInactive = true
         dispatch_async(smartcardQueue) {
             self.closeSmartcard()
         }
@@ -200,8 +203,8 @@ public class SITHSManager {
 
     private func accessoryConnected(notification: NSNotification) {
         log("Accessory Connected Notification")
-        // Ignore accessory connection state notifications when application is not active.
-        if UIApplication.sharedApplication().applicationState != .Active {
+        if applicationInactive {
+            // Ignore accessory connection state notifications when application is not active.
             return
         }
 
@@ -212,8 +215,8 @@ public class SITHSManager {
 
     private func accessoryDisconnected(notification: NSNotification) {
         log("Accessory Disconnected Notification")
-        // Ignore accessory connection state notifications when application is not active.
-        if UIApplication.sharedApplication().applicationState != .Active {
+        if applicationInactive {
+            // Ignore accessory connection state notifications when application is not active.
             return
         }
 
@@ -225,7 +228,7 @@ public class SITHSManager {
         log("OpenSmartcard status \(result)")
 
         guard result == PBSmartcardStatusSuccess else {
-            internalState = .Error(error: getError(result))
+            setErrorState(getError(result))
             return
         }
     }
@@ -252,7 +255,7 @@ public class SITHSManager {
                 internalState = .ReaderConnected
                 return
             } else if result != PBSmartcardStatusSuccess {
-                internalState = .Error(error: getError(result))
+                setErrorState(getError(result))
                 return
             }
 
@@ -312,10 +315,10 @@ public class SITHSManager {
                     return
                 }
             } catch let error as SITHSManagerError {
-                internalState = .Error(error: error)
+                setErrorState(error)
                 return
             } catch {
-                internalState = .Error(error: .InternalError(error: error))
+                setErrorState(.InternalError(error: error))
                 return
             }
 
@@ -693,6 +696,16 @@ public class SITHSManager {
         }
 
         return SITHSManagerError.SmartcardError(message: message, code: code)
+    }
+
+    private func setErrorState(error: SITHSManagerError) {
+        if applicationInactive {
+            // We're suppressing all error states while application is inactive. This will be resolved again when the application enters forground
+            // and  a new connection is made (that of course then could result in the same error, and will then be set as state correctly)
+            return
+        }
+
+        internalState = .Error(error: error)
     }
 
     func log(message: String) {
