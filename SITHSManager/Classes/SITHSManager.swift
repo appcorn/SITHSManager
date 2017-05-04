@@ -647,7 +647,8 @@ public class SITHSManager {
     }
 
     private func closeSmartcard() {
-        smartcard.close()
+        let result = smartcard.close()
+        log("CloseSmartcard status \(result)")
     }
 
     private func getError(status: PBSmartcardStatus) -> SITHSManagerError {
