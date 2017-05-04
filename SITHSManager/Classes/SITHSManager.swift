@@ -161,7 +161,7 @@ public class SITHSManager {
      as soon as this instance is deallocated.
      */
     public init() {
-        smartcardQueue = dispatch_queue_create("Smartcard Queue", DISPATCH_QUEUE_SERIAL)
+        smartcardQueue = dispatch_queue_create("Smartcard Queue", DISPATCH_QUEUE_CONCURRENT)
 
         // Register for notifications
         observers.append(ObserverProxy(name: "PB_CARD_INSERTED", object: nil, closure: cardInserted))
