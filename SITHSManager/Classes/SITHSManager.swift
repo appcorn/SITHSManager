@@ -36,37 +36,37 @@ import ExternalAccessory
                                     least one element).
  */
 public enum SITHSManagerState: Equatable {
-    case Unknown
-    case Error(error: SITHSManagerError)
-    case ReaderDisconnected
-    case ReaderConnected
-    case UnknownCardInserted
-    case ReadingFromCard
-    case CardWithoutCertificatesInserted
-    case CardInserted(certificates: [SITHSCardCertificate])
+    case unknown
+    case error(error: SITHSManagerError)
+    case readerDisconnected
+    case readerConnected
+    case unknownCardInserted
+    case readingFromCard
+    case cardWithoutCertificatesInserted
+    case cardInserted(certificates: [SITHSCardCertificate])
 }
 
 public func ==(lhs: SITHSManagerState, rhs: SITHSManagerState) -> Bool {
     switch (lhs, rhs) {
-    case (.Unknown, .Unknown),
-         (.ReaderDisconnected, .ReaderDisconnected),
-         (.ReaderConnected, .ReaderConnected),
-         (.UnknownCardInserted, .UnknownCardInserted),
-         (.ReadingFromCard, .ReadingFromCard),
-         (.CardWithoutCertificatesInserted, .CardWithoutCertificatesInserted):
+    case (.unknown, .unknown),
+         (.readerDisconnected, .readerDisconnected),
+         (.readerConnected, .readerConnected),
+         (.unknownCardInserted, .unknownCardInserted),
+         (.readingFromCard, .readingFromCard),
+         (.cardWithoutCertificatesInserted, .cardWithoutCertificatesInserted):
         return true
-    case let (.Error(a), .Error(b)):
+    case let (.error(a), .error(b)):
         return a == b
-    case let (.CardInserted(a), .CardInserted(b)):
+    case let (.cardInserted(a), .cardInserted(b)):
         return a == b
-    case (.Unknown, _),
-         (.ReaderDisconnected, _),
-         (.ReaderConnected, _),
-         (.UnknownCardInserted, _),
-         (.ReadingFromCard, _),
-         (.CardWithoutCertificatesInserted, _),
-         (.Error, _),
-         (.CardInserted, _):
+    case (.unknown, _),
+         (.readerDisconnected, _),
+         (.readerConnected, _),
+         (.unknownCardInserted, _),
+         (.readingFromCard, _),
+         (.cardWithoutCertificatesInserted, _),
+         (.error, _),
+         (.cardInserted, _):
         return false
     }
 }
@@ -79,20 +79,20 @@ public func ==(lhs: SITHSManagerState, rhs: SITHSManagerState) -> Bool {
  - InternalError:   There has been an internal error in the card communication or data parsing. If there is more information, it's contained
                     in the `error` associated value.
  */
-public enum SITHSManagerError: ErrorType, Equatable {
-    case SmartcardError(message: String, code: Int)
-    case InternalError(error: ErrorType?)
+public enum SITHSManagerError: Error, Equatable {
+    case smartcardError(message: String, code: Int)
+    case internalError(error: Error?)
 }
 
 public func ==(lhs: SITHSManagerError, rhs: SITHSManagerError) -> Bool {
     switch (lhs, rhs) {
-    case let (.SmartcardError(messageA, codeA), .SmartcardError(messageB, codeB)):
+    case let (.smartcardError(messageA, codeA), .smartcardError(messageB, codeB)):
         return messageA == messageB && codeA == codeB
-    case (.InternalError, .InternalError):
+    case (.internalError, .internalError):
         // TODO: This does not properly compare the internal errors
         return false
-    case (.SmartcardError, _),
-         (.InternalError, _):
+    case (.smartcardError, _),
+         (.internalError, _):
         return false
     }
 }
@@ -104,29 +104,29 @@ public func ==(lhs: SITHSManagerError, rhs: SITHSManagerError) -> Bool {
  The class will also communicate with any inserted smart card via APDU messages to fetch the data directory structure and embedded
  certificates. The class uses `ASN1Parser` to parse the SITHS card ASN.1 DER/BER data.
  */
-public class SITHSManager {
-    private struct SmartcardManagerConfiguration {
+open class SITHSManager {
+    fileprivate struct SmartcardManagerConfiguration {
         /// Maximum number of card reader connection retries.
         static let FetchStatusMaxRetries: Int = 5
         /// Card reader connection retry timeout
-        static let FetchStatusRetryTimeout: NSTimeInterval = 0.2
+        static let FetchStatusRetryTimeout: TimeInterval = 0.2
         /// Number of trailing bytes of card file contents that are allowed to be 0xFF until file is considered completely read. Set to nil
         /// to disable this functionality.
         static let ResponseDataTerminatingTrailingFFLimit: Int? = 10
     }
 
     // Observation and dispatch
-    private var observers: [ObserverProxy] = []
-    private let smartcardQueue: dispatch_queue_t
-    private var retryingConnection: Bool = false
-    private var applicationInactive: Bool = false
+    fileprivate var observers: [ObserverProxy] = []
+    fileprivate let smartcardQueue: DispatchQueue
+    fileprivate var retryingConnection: Bool = false
+    fileprivate var applicationInactive: Bool = false
 
     // Communication objects
-    private let smartcard = PBSmartcard()
-    private let accessory = PBAccessory.sharedClass()
+    fileprivate let smartcard = PBSmartcard()
+    fileprivate let accessory = PBAccessory.sharedClass()
 
     /// The current state of the SITHS Manager. When changed, the `stateClosure` is called.
-    public var state: SITHSManagerState {
+    open var state: SITHSManagerState {
         get {
             return internalState
         }
@@ -136,18 +136,18 @@ public class SITHSManager {
      The state change obcserver closure block. Will be called every time the state changes. The state can also be read directly from the
      `state` property.
      */
-    public var stateClosure: ((SITHSManagerState) -> ())?
+    open var stateClosure: ((SITHSManagerState) -> ())?
 
     /**
      The debug log closure block. Is called continously during state changes and SITHS card communication, and is quite verbose.
      Note: Since debugging via the console when connected to a card reader is hard, it's adviced to log to screen or file.
      */
-    public var debugLogClosure: ((String) -> ())?
+    open var debugLogClosure: ((String) -> ())?
 
-    private var internalState: SITHSManagerState = .Unknown {
+    fileprivate var internalState: SITHSManagerState = .unknown {
         didSet {
             if internalState != oldValue {
-                dispatch_async(dispatch_get_main_queue()) {
+                DispatchQueue.main.async {
                     self.stateClosure?(self.internalState)
                 }
             }
@@ -161,79 +161,79 @@ public class SITHSManager {
      as soon as this instance is deallocated.
      */
     public init() {
-        smartcardQueue = dispatch_queue_create("Smartcard Queue", DISPATCH_QUEUE_CONCURRENT)
+        smartcardQueue = DispatchQueue(label: "Smartcard Queue", attributes: .concurrent)
 
         // Register for notifications
-        observers.append(ObserverProxy(name: "PB_CARD_INSERTED", object: nil, closure: cardInserted))
-        observers.append(ObserverProxy(name: "PB_CARD_REMOVED", object: nil, closure: cardRemoved))
-        observers.append(ObserverProxy(name: PBAccessoryDidConnectNotification, object: nil, closure: accessoryConnected))
-        observers.append(ObserverProxy(name: PBAccessoryDidDisconnectNotification, object: nil, closure: accessoryDisconnected))
-        observers.append(ObserverProxy(name: UIApplicationDidBecomeActiveNotification, object: nil, closure: applicationDidBecomeActive))
-        observers.append(ObserverProxy(name: UIApplicationWillResignActiveNotification, object: nil, closure: applicationWillResignActive))
+        observers.append(ObserverProxy(name: .init(rawValue: "PB_CARD_INSERTED"), object: nil, closure: cardInserted))
+        observers.append(ObserverProxy(name: .init(rawValue: "PB_CARD_REMOVED"), object: nil, closure: cardRemoved))
+        observers.append(ObserverProxy(name: .PBAccessoryDidConnect, object: nil, closure: accessoryConnected))
+        observers.append(ObserverProxy(name: .PBAccessoryDidDisconnect, object: nil, closure: accessoryDisconnected))
+        observers.append(ObserverProxy(name: .UIApplicationDidBecomeActive, object: nil, closure: applicationDidBecomeActive))
+        observers.append(ObserverProxy(name: .UIApplicationWillResignActive, object: nil, closure: applicationWillResignActive))
     }
 
-    private func applicationDidBecomeActive(notification: NSNotification) {
-        log("Application Did Become Active Notification")
+    fileprivate func applicationDidBecomeActive(notification: Notification) {
+        log(message: "Application Did Become Active Notification")
         applicationInactive = false
-        dispatch_async(smartcardQueue) {
+        smartcardQueue.async {
             self.openSmartcard()
             self.checkSmartcard()
         }
     }
 
-    private func applicationWillResignActive(notification: NSNotification) {
-        log("Application Will Resign Active Notification")
+    fileprivate func applicationWillResignActive(notification: Notification) {
+        log(message: "Application Will Resign Active Notification")
         applicationInactive = true
-        dispatch_async(smartcardQueue) {
+        smartcardQueue.async {
             self.closeSmartcard()
         }
     }
 
-    private func cardInserted(notification: NSNotification) {
-        log("Card Inserted Notification")
-        dispatch_async(smartcardQueue) {
+    fileprivate func cardInserted(notification: Notification) {
+        log(message: "Card Inserted Notification")
+        smartcardQueue.async {
             self.checkSmartcard()
         }
     }
 
-    private func cardRemoved(notification: NSNotification) {
-        log("Card Removed Notification")
-        internalState = .ReaderConnected
+    fileprivate func cardRemoved(notification: Notification) {
+        log(message: "Card Removed Notification")
+        internalState = .readerConnected
     }
 
-    private func accessoryConnected(notification: NSNotification) {
-        log("Accessory Connected Notification")
+    fileprivate func accessoryConnected(notification: Notification) {
+        log(message: "Accessory Connected Notification")
         if applicationInactive {
             // Ignore accessory connection state notifications when application is not active.
             return
         }
 
-        dispatch_async(smartcardQueue) {
+        smartcardQueue.async {
             self.checkSmartcard()
         }
     }
 
-    private func accessoryDisconnected(notification: NSNotification) {
-        log("Accessory Disconnected Notification")
+    fileprivate func accessoryDisconnected(notification: Notification) {
+        log(message: "Accessory Disconnected Notification")
         if applicationInactive {
             // Ignore accessory connection state notifications when application is not active.
             return
         }
 
-        internalState = .ReaderDisconnected
+        internalState = .readerDisconnected
     }
 
-    private func openSmartcard() {
+    fileprivate func openSmartcard() {
         let result = smartcard.open()
-        log("OpenSmartcard status \(result)")
+        log(message: "OpenSmartcard status \(result)")
 
         guard result == PBSmartcardStatusSuccess else {
-            setErrorState(getError(result))
+            setErrorState(error: getError(status: result))
             return
         }
     }
 
-    private func checkSmartcard(retryCount: Int = 0) {
+    fileprivate func checkSmartcard(retryCount: Int = 0) {
         if retryCount == 0 && retryingConnection {
             return
         } else {
@@ -241,65 +241,65 @@ public class SITHSManager {
         }
 
         let status = smartcard.getSlotStatus()
-        log("CheckSmartcard status \(status), retry \(retryCount)")
+        log(message: "CheckSmartcard status \(status), retry \(retryCount)")
 
         switch status {
         case PBSmartcardSlotStatusEmpty:
-            internalState = .ReaderConnected
+            internalState = .readerConnected
         case PBSmartcardSlotStatusPresent, PBSmartcardSlotStatusPresentConnected:
             let result = smartcard.connect(PBSmartcardProtocolTx)
 
-            log("Connect status \(result)")
+            log(message: "Connect status \(result)")
 
             if result == PBSmartcardStatusNoSmartcard {
-                internalState = .ReaderConnected
+                internalState = .readerConnected
                 return
             } else if result != PBSmartcardStatusSuccess {
-                setErrorState(getError(result))
+                setErrorState(error: getError(status: result))
                 return
             }
 
             var certificates = [SITHSCardCertificate]()
 
             do {
-                log("Selecting EID")
+                log(message: "Selecting EID")
 
                 // Select the SITHS card EID
                 let command = SmartcardCommandAPDU(
                     instructionClass: 0x00,
                     instructionCode: 0xA4,
                     instructionParameters: [0x04, 0x00],
-                    commandData: [0xA0, 0x00, 0x00, 0x00, 0x63, 0x50, 0x4B, 0x43, 0x53, 0x2D, 0x31, 0x35],
+                    commandData: Data(bytes: [0xA0, 0x00, 0x00, 0x00, 0x63, 0x50, 0x4B, 0x43, 0x53, 0x2D, 0x31, 0x35]),
                     expectedResponseBytes: nil
                 )
 
-                let response = try transmitCommand(command)
+                let response = try transmit(command: command)
 
-                log("Got response: \(response)")
+                log(message: "Got response: \(response)")
 
                 switch response.processingStatus {
                 case .successWithResponse:
-                    internalState = .ReadingFromCard
+                    internalState = .readingFromCard
 
                     // The initial address is the EF.ODF file identifier
-                    var identifiers = [[UInt8(0x50), UInt8(0x31)]]
-                    var readIdentifiers = [[UInt8]]()
+                    var identifiers: [[UInt8]] = [[0x50, 0x31]]
+                    var readIdentifiers: [[UInt8]] = []
 
                     while identifiers.count > 0 {
                         let identifier = identifiers.removeFirst()
                         readIdentifiers.append(identifier)
 
-                        log("Read loop iteration, reading from identifier \(identifier.hexString())")
+                        log(message: "Read loop iteration, reading from identifier \(identifier.hexString())")
 
-                        let _ = try transmitSelectFileAndGetResponse(identifier)
+                        let _ = try transmitSelectFileAndGetResponse(identifier: identifier)
                         let efData = try transmitReadBinary()
                         let efParser = ASN1Parser(data: efData)
 
                         while let parsed = efParser.parseElement() {
-                            log("Pasred: \(parsed)")
+                            log(message: "Parsed: \(parsed)")
 
-                            if let foundIdentifier = getCardEFIdentifier(parsed.element) {
-                                if !identifiers.contains({ $0 == foundIdentifier }) && !readIdentifiers.contains({ $0 == foundIdentifier }) {
+                            if let foundIdentifier = getCardEFIdentifier(element: parsed.element) {
+                                if !identifiers.contains(where: { $0 == foundIdentifier }) && !readIdentifiers.contains(where: { $0 == foundIdentifier }) {
                                     identifiers.append(foundIdentifier)
                                 }
                             }
@@ -310,31 +310,31 @@ public class SITHSManager {
                         }
                     }
                 default:
-                    log("Could not correctly set EID, unkown card")
-                    internalState = .UnknownCardInserted
+                    log(message: "Could not correctly set EID, unkown card")
+                    internalState = .unknownCardInserted
                     return
                 }
             } catch let error as SITHSManagerError {
-                setErrorState(error)
+                setErrorState(error: error)
                 return
             } catch {
-                setErrorState(.InternalError(error: error))
+                setErrorState(error: .internalError(error: error))
                 return
             }
 
             let serialStrings = certificates.map { return $0.serialString }
-            log("SITHS Card communication complete, found certificates with serial HEX-strings: \(serialStrings)")
+            log(message: "SITHS Card communication complete, found certificates with serial HEX-strings: \(serialStrings)")
 
             guard certificates.count > 0 else {
-                log("No certificates in response")
-                internalState = .CardWithoutCertificatesInserted
+                log(message: "No certificates in response")
+                internalState = .cardWithoutCertificatesInserted
                 return
             }
 
-            internalState = .CardInserted(certificates: certificates)
+            internalState = .cardInserted(certificates: certificates)
         case PBSmartcardSlotStatusUnknown:
-            if !accessory.connected {
-                internalState = .ReaderDisconnected
+            if !(accessory?.isConnected)! {
+                internalState = .readerDisconnected
             } else {
                 fallthrough
             }
@@ -342,163 +342,161 @@ public class SITHSManager {
             if retryCount < SmartcardManagerConfiguration.FetchStatusMaxRetries {
                 // Retry connection, do not update state yet
                 retryingConnection = true
-                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, Int64(SmartcardManagerConfiguration.FetchStatusRetryTimeout * Double(NSEC_PER_SEC))), smartcardQueue) {
-                    self.checkSmartcard(retryCount + 1)
+                smartcardQueue.asyncAfter(deadline: .now() + SmartcardManagerConfiguration.FetchStatusRetryTimeout) {
+                    self.checkSmartcard(retryCount: retryCount + 1)
                 }
             } else {
                 // Max number of retries, set state to unknown
-                internalState = .Unknown
+                internalState = .unknown
             }
         }
     }
 
-    private func getCardEFIdentifier(element: ASN1Element) -> [UInt8]? {
+    fileprivate func getCardEFIdentifier(element: ASN1Element) -> [UInt8]? {
         switch element {
-        case .ContextSpecific(_, let elementsOrRawValue):
+        case .contextSpecific(_, let elementsOrRawValue):
             switch elementsOrRawValue {
-            case .Elements(let elements):
+            case .elements(let elements):
                 switch elements[0] {
-                case .Sequence(let elements):
+                case .sequence(let elements):
                     guard elements.count == 1 else {
-                        log("Application Sequence did not contain one value, skip")
+                        log(message: "Application Sequence did not contain one value, skip")
                         // Application Sequence did not contain one value, skip
                         break
                     }
 
                     switch elements[0] {
-                    case .OctetString(let value):
+                    case .octetString(let value):
                         switch value {
-                        case .RawValue(let value):
-                            guard value.length == 4 else {
-                                log("Octet String raw value was not 4 bytes, skip")
+                        case .rawValue(let value):
+                            guard value.count == 4 else {
+                                log(message: "Octet String raw value was not 4 bytes, skip")
                                 // Octet String raw value was not 4 bytes, skip
                                 break
                             }
 
-                            var bytes = [UInt8](count: value.length, repeatedValue: 0xFF)
-                            value.getBytes(&bytes, length: value.length)
+                            var bytes = [UInt8](value)
 
                             guard bytes[0...1] == [0x3F, 0x00] else {
-                                log("First bytes was not 3F00, skip")
+                                log(message: "First bytes was not 3F00, skip")
                                 // First bytes was not 3F00, skip
                                 break
                             }
 
-                            let identifier = Array(bytes[2...3])
+                            let identifier = [UInt8](value[2...3])
 
-                            log("Found identifier \(identifier)")
+                            log(message: "Found identifier \(identifier)")
 
                             return identifier
-                        case .Elements:
-                            log("Sequence Octet String was not raw value, skip")
+                        case .elements:
+                            log(message: "Sequence Octet String was not raw value, skip")
                             // Sequence Octet String was not raw value, skip
                             break
                         }
                     default:
-                        log("Sequence element was not Octet String, skip")
+                        log(message: "Sequence element was not Octet String, skip")
                         // Sequence element was not Octet String, skip
                         break
                     }
                 default:
-                    log("First Context Specific element is not Sequence, skip")
+                    log(message: "First Context Specific element is not Sequence, skip")
                     // First Context Specific element is not Sequence, skip
                     break
                 }
-            case .RawValue:
-                log("Context Specific element did not contain parsed elements, skip")
+            case .rawValue:
+                log(message: "Context Specific element did not contain parsed elements, skip")
                 // Context Specific element did not contain parsed elements, skip
                 break
             }
 
-        case .Sequence(let elements):
+        case .sequence(let elements):
             guard let element = elements[safe: 2] else {
-                log("Root Sequence does not have enough elements, skip")
+                log(message: "Root Sequence does not have enough elements, skip")
                 // Root Sequence does not have enough elements, skip
                 break
             }
 
             switch element {
-            case .ContextSpecific(number: 1, let value):
+            case .contextSpecific(number: 1, let value):
                 switch value {
-                case .Elements(let elements):
+                case .elements(let elements):
                     guard let element = elements.first else {
-                        log("Context Specific does not have enough elements, skip")
+                        log(message: "Context Specific does not have enough elements, skip")
                         // Context Specific does not have enough elements, skip
                         break
                     }
 
                     switch element {
-                    case .Sequence(let elements):
+                    case .sequence(let elements):
                         guard let element = elements.first else {
-                            log("First Sequence does not have enough elements, skip")
+                            log(message: "First Sequence does not have enough elements, skip")
                             // First Sequence does not have enough elements, skip
                             break
                         }
 
                         switch element {
-                        case .Sequence(let elements):
+                        case .sequence(let elements):
                             guard let element = elements.first else {
-                                log("First Sequence does not have enough elements, skip")
+                                log(message: "First Sequence does not have enough elements, skip")
                                 // First Sequence does not have enough elements, skip
                                 break
                             }
 
                             switch element {
-                            case .OctetString(let value):
+                            case .octetString(let value):
                                 switch value {
-                                case .RawValue(let value):
-                                    guard value.length == 4 else {
-                                        log("Octet String raw value was not 4 bytes, skip")
+                                case .rawValue(let value):
+                                    guard value.count == 4 else {
+                                        log(message: "Octet String raw value was not 4 bytes, skip")
                                         // Octet String raw value was not 4 bytes, skip
                                         break
                                     }
 
-                                    var bytes = [UInt8](count: value.length, repeatedValue: 0xFF)
-                                    value.getBytes(&bytes, length: value.length)
+                                    var bytes = [UInt8](value)
 
                                     guard bytes[0...1] == [0x3F, 0x00] else {
-                                        log("First bytes was not 3F00, skip")
+                                        log(message: "First bytes was not 3F00, skip")
                                         // First bytes was not 3F00, skip
                                         break
                                     }
                                     
-                                    let identifier = Array(bytes[2...3])
+                                    let identifier = [UInt8](value[2...3])
 
-                                    log("Found identifier \(identifier)")
+                                    log(message: "Found identifier \(identifier)")
 
                                     return identifier
                                 default:
-                                    log("Sequence Octet String was not raw value, skip")
+                                    log(message: "Sequence Octet String was not raw value, skip")
                                     // Sequence Octet String was not raw value, skip
                                     break
                                 }
                             default:
-                                log("Sequence element was not Octet String, skip")
+                                log(message: "Sequence element was not Octet String, skip")
                                 // Sequence element was not Octet String, skip
                                 break
                             }
                         default:
-                            log("Sequence element was not Sequence, skip")
+                            log(message: "Sequence element was not Sequence, skip")
                             // Sequence element was not Sequence, skip
                             break
                         }
                     default:
-                        log("Context Specific element was not Sequence, skip")
+                        log(message: "Context Specific element was not Sequence, skip")
                         // Context Specific element was not Sequence, skip
                         break
                     }
                 default:
-                    log("Context Specific element did not contain parsed elements, skip")
+                    log(message: "Context Specific element did not contain parsed elements, skip")
                     // Context Specific element did not contain parsed elements, skip
                     break
                 }
             default:
-                log("Root sequence element was not Context Specific, skip")
+                log(message: "Root sequence element was not Context Specific, skip")
                 // Root sequence element was not Context Specific, skip
                 break
             }
         default:
-            log("Root element is not Sequence or Context Specific, skip")
+            log(message: "Root element is not Sequence or Context Specific, skip")
             // Root element is not Sequence or Context Specific, skip
             break
         }
@@ -506,17 +504,17 @@ public class SITHSManager {
         return nil
     }
 
-    private func transmitSelectFileAndGetResponse(identifier: [UInt8]) throws -> NSData {
+    fileprivate func transmitSelectFileAndGetResponse(identifier: [UInt8]) throws -> Data {
         // The SELECT FILE command
         let selectFileCommand = SmartcardCommandAPDU(
             instructionClass: 0x00,
             instructionCode: 0xA4,
             instructionParameters: [0x00, 0x00],
-            commandData: identifier,
+            commandData: Data(bytes: identifier),
             expectedResponseBytes: nil
         )
 
-        let selectFileResponse = try transmitCommand(selectFileCommand)
+        let selectFileResponse = try transmit(command: selectFileCommand)
 
         let availableBytes: UInt8
 
@@ -524,7 +522,7 @@ public class SITHSManager {
         case .successWithResponse(let internalAvailableBytes):
             availableBytes = internalAvailableBytes
         default:
-            throw SITHSManagerError.InternalError(error: nil)
+            throw SITHSManagerError.internalError(error: nil)
         }
 
         // The GET RESPONSE command
@@ -536,22 +534,22 @@ public class SITHSManager {
             expectedResponseBytes: UInt16(availableBytes)
         )
 
-        let getResponseResponse = try transmitCommand(getResponseCommand)
+        let getResponseResponse = try transmit(command: getResponseCommand)
 
         switch getResponseResponse.processingStatus {
         case .success:
             guard let responseData = getResponseResponse.responseData else {
-                throw SITHSManagerError.InternalError(error: nil)
+                throw SITHSManagerError.internalError(error: nil)
             }
 
             return responseData
         default:
-            throw SITHSManagerError.InternalError(error: nil)
+            throw SITHSManagerError.internalError(error: nil)
         }
     }
 
-    private func transmitReadBinary() throws -> NSData {
-        let dataBuffer = NSMutableData()
+    fileprivate func transmitReadBinary() throws -> Data {
+        var dataBuffer = Data()
         var offset: UInt16 = 0
         var chunkSize: UInt16 = 0xFF
         var readingDone = false
@@ -572,24 +570,23 @@ public class SITHSManager {
                 expectedResponseBytes: chunkSize
             )
 
-            let readBinaryResponse = try transmitCommand(readBinaryCommand)
+            let readBinaryResponse = try transmit(command: readBinaryCommand)
 
             switch readBinaryResponse.processingStatus {
             case .incorrectExpectedResponseBytes(let correctExpectedResponseBytes):
                 chunkSize = UInt16(correctExpectedResponseBytes)
             case .success:
                 guard let responseData = readBinaryResponse.responseData else {
-                    throw SITHSManagerError.InternalError(error: nil)
+                    throw SITHSManagerError.internalError(error: nil)
                 }
 
                 // Look at the last bytes of the response
-                if let limit = SmartcardManagerConfiguration.ResponseDataTerminatingTrailingFFLimit where responseData.length >= limit {
-                    let bytes =  UnsafePointer<UInt8>(responseData.bytes)
+                if let limit = SmartcardManagerConfiguration.ResponseDataTerminatingTrailingFFLimit, responseData.count >= limit {
                     var onlyFF = true
 
                     // Loop through and check for 0xFF
-                    for i in responseData.length-limit..<responseData.length {
-                        if bytes[i] != 0xFF {
+                    for i in responseData.count-limit..<responseData.count {
+                        if responseData[i] != 0xFF {
                             onlyFF = false
                             break
                         }
@@ -601,57 +598,63 @@ public class SITHSManager {
                     }
                 }
 
-                offset += UInt16(responseData.length)
-                dataBuffer.appendData(responseData)
+                offset += UInt16(responseData.count)
+                dataBuffer.append(responseData)
             default:
-                throw SITHSManagerError.InternalError(error: nil)
+                throw SITHSManagerError.internalError(error: nil)
             }
         }
 
         return dataBuffer
     }
 
-    private func transmitCommand(command: SmartcardCommandAPDU) throws -> SmartcardResponseAPDU {
-        let mergedCommand = try command.mergedCommand()
+    fileprivate func transmit(command: SmartcardCommandAPDU) throws -> SmartcardResponseAPDU {
+        var mergedCommand = try command.mergedCommand()
 
-        var received_data_length: UInt16 = 0xFF
+        var receivedDataLength: UInt16 = 0xFF
 
         if let expectedBytes = command.expectedResponseBytes {
-            received_data_length = expectedBytes + 2
+            receivedDataLength = expectedBytes + 2
         }
 
-        let received_data = UnsafeMutablePointer<UInt8>.alloc(Int(received_data_length))
+        var receivedData = Data(count: Int(receivedDataLength))
 
-        log("Transmitting \(mergedCommand.count) >>> \(mergedCommand.hexString())")
+        log(message: "Transmitting \(mergedCommand.count) >>> \(mergedCommand.hexString())")
 
-        let result = smartcard.transmit(UnsafeMutablePointer(mergedCommand),
-                                        withCommandLength: UInt16(mergedCommand.count),
-                                        andResponseBuffer: received_data,
-                                        andResponseLength: &received_data_length)
+        let result = receivedData.withUnsafeMutableBytes { (receivedDataPointer: UnsafeMutablePointer<UInt8>) in
+            return mergedCommand.withUnsafeMutableBytes { (mergedCommandPointer: UnsafeMutablePointer<UInt8>) in
+                return self.smartcard.transmit(mergedCommandPointer,
+                                               withCommandLength: UInt16(mergedCommand.count),
+                                               andResponseBuffer: receivedDataPointer,
+                                               andResponseLength: &receivedDataLength)
+            }
+        }
 
-        let bytes = received_data.valueArray(count: Int(received_data_length))
+        if receivedData.count > Int(receivedDataLength) {
+            receivedData.removeSubrange(Int(receivedDataLength)..<receivedData.count)
+        }
 
-        log("Received \(received_data_length) <<< \(bytes.hexString())")
+        log(message: "Received \(receivedDataLength) <<< \(receivedData.hexString())")
 
-        log("Transmit status \(result)")
+        log(message: "Transmit status \(result)")
 
         guard result == PBSmartcardStatusSuccess else {
-            throw getError(result)
+            throw getError(status: result)
         }
 
-        let response = try SmartcardResponseAPDU(bytes: bytes)
+        let response = try SmartcardResponseAPDU(data: receivedData)
 
-        log("Processed response \(response)")
+        log(message: "Processed response \(response)")
 
         return response
     }
 
-    private func closeSmartcard() {
+    fileprivate func closeSmartcard() {
         let result = smartcard.close()
-        log("CloseSmartcard status \(result)")
+        log(message: "CloseSmartcard status \(result)")
     }
 
-    private func getError(status: PBSmartcardStatus) -> SITHSManagerError {
+    fileprivate func getError(status: PBSmartcardStatus) -> SITHSManagerError {
         let message: String
         let code = Int(status.rawValue)
 
@@ -696,21 +699,21 @@ public class SITHSManager {
             message = "Undefined error"
         }
 
-        return SITHSManagerError.SmartcardError(message: message, code: code)
+        return SITHSManagerError.smartcardError(message: message, code: code)
     }
 
-    private func setErrorState(error: SITHSManagerError) {
+    fileprivate func setErrorState(error: SITHSManagerError) {
         if applicationInactive {
             // We're suppressing all error states while application is inactive. This will be resolved again when the application enters forground
             // and  a new connection is made (that of course then could result in the same error, and will then be set as state correctly)
             return
         }
 
-        internalState = .Error(error: error)
+        internalState = .error(error: error)
     }
 
     func log(message: String) {
-        dispatch_async(dispatch_get_main_queue()) {
+        DispatchQueue.main.async {
             self.debugLogClosure?(message)
         }
     }

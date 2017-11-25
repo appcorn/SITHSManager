@@ -18,43 +18,62 @@
 
 import Foundation
 
-extension SequenceType where Generator.Element == UInt8 {
+extension Sequence where Iterator.Element == UInt8 {
     /// Creates and returns a HEX string representation of the data in the byte array.
     ///
     /// - Parameter byteSeparator: If set to true (the default value), the bytes will be separated with a space.
     /// - Returns: An upper case HEX string represent of the byte array, for exampel "6D 61 72 74 69 6E" or "6D617274696E"
-    func hexString(byteSeparator byteSeparator: Bool = true) -> String {
+    func hexString(byteSeparator: Bool = true) -> String {
         var hexString = [String]()
 
         for byte in self {
             hexString.append(String(format: "%02X", byte))
         }
 
-        return hexString.joinWithSeparator(byteSeparator ? " " : "")
+        return hexString.joined(separator: byteSeparator ? " " : "")
+    }
+}
+
+extension Data {
+    /// Creates and returns a HEX string representation of the data.
+    ///
+    /// - Parameter byteSeparator: If set to true (the default value), the bytes will be separated with a space.
+    /// - Returns: An upper case HEX string represent of the data, for exampel "6D 61 72 74 69 6E" or "6D617274696E"
+    func hexString(byteSeparator: Bool = true) -> String {
+        var hexString = [String]()
+
+        for i in 0..<count {
+            hexString.append(String(format: "%02X", self[i]))
+        }
+
+        return hexString.joined(separator: byteSeparator ? " " : "")
     }
 
     /// Converts the byte array to a big endian signed integer. Note that byte arrays larger than 4 bytes will be truncated.
     ///
     /// - Returns: The big endian signed integer representation of up to 4 bytes in the byte array.
     func intValue() -> Int {
-        var bytes = Array(self)
+        var data = self
 
-        switch bytes.count {
+        switch count {
         case 0:
             return 0
         case 1:
-            let value = UnsafePointer<UInt8>(bytes).memory
-            return Int(value)
+            return Int(data[0])
         case 2:
-            let value = UnsafePointer<Int16>(bytes).memory
-            return Int(Int16(bigEndian: Int16(value)))
+            let value = data.withUnsafeBytes { (pointer: UnsafePointer<Int16>) in
+                return pointer.pointee
+            }
+            return Int(Int16(bigEndian: value))
         case 3:
             // Only three bytes, add 0x00 padding to result in four bytes and continue to next case
-            bytes.insert(0x00, atIndex: 0)
+            data =  Data(bytes: [0x00]) + data
             fallthrough
         case 4..<Int.max:
-            let value = UnsafePointer<Int32>(bytes).memory
-            return Int(Int32(bigEndian: Int32(value)))
+            let value = data.withUnsafeBytes { (pointer: UnsafePointer<Int32>) in
+                return pointer.pointee
+            }
+            return Int(Int32(bigEndian: value))
         default:
             fatalError()
         }
@@ -64,51 +83,37 @@ extension SequenceType where Generator.Element == UInt8 {
     ///
     /// - Returns: The big endian unsigned integer representation of up to 4 bytes in the byte array.
     func uintValue() -> UInt {
-        var bytes = Array(self)
+        var data = self
 
-        switch bytes.count {
+        switch count {
         case 0:
             return 0
         case 1:
-            let value = UnsafePointer<UInt8>(bytes).memory
-            return UInt(value)
+            return UInt(data[0])
         case 2:
-            let value = UnsafePointer<UInt16>(bytes).memory
-            return UInt(UInt16(bigEndian: UInt16(value)))
+            let value = data.withUnsafeBytes { (pointer: UnsafePointer<UInt16>) in
+                return pointer.pointee
+            }
+            return UInt(UInt16(bigEndian: value))
         case 3:
             // Only three bytes, add 0x00 padding to result in four bytes and continue to next case
-            bytes.insert(0x00, atIndex: 0)
+            data =  Data(bytes: [0x00]) + data
             fallthrough
         case 4..<Int.max:
-            let value = UnsafePointer<UInt32>(bytes).memory
-            return UInt(UInt32(bigEndian: UInt32(value)))
+            let value = data.withUnsafeBytes { (pointer: UnsafePointer<UInt32>) in
+                return pointer.pointee
+            }
+            return UInt(UInt32(bigEndian: value))
         default:
             fatalError()
         }
     }
 }
 
-extension NSData {
-    /// Creates and returns a HEX string representation of the data.
-    ///
-    /// - Parameter byteSeparator: If set to true (the default value), the bytes will be separated with a space.
-    /// - Returns: An upper case HEX string represent of the data, for exampel "6D 61 72 74 69 6E" or "6D617274696E"
-    func hexString(byteSeparator byteSeparator: Bool = true) -> String {
-        var hexString = [String]()
-        let bytes =  UnsafePointer<UInt8>(self.bytes)
-
-        for i in 0..<length {
-            hexString.append(String(format: "%02X", bytes[i]))
-        }
-
-        return hexString.joinWithSeparator(byteSeparator ? " " : "")
-    }
-}
-
-extension CollectionType {
+extension Collection {
     /// Returns the element at the specified index if it is within bounds, otherwise nil.
     subscript (safe index: Index) -> Generator.Element? {
-        return indices.contains(index) ? self[index] : nil
+        return index <= endIndex ? self[index] : nil
     }
 }
 
@@ -117,7 +122,7 @@ extension UnsafeMutablePointer {
     ///
     /// - Parameter count: Number of bytes to read from the pointer.
     /// - Returns: An array, conatining the bytes of data at the pointer.
-    func valueArray(count count: Int) -> [Memory] {
+    func valueArray(count: Int) -> [Pointee] {
         let buffer = UnsafeBufferPointer(start: self, count: count)
         return Array(buffer)
     }
