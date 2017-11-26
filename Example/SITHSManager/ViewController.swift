@@ -37,43 +37,45 @@ class ViewController: UIViewController {
         dateFormatter.dateStyle = .none
         dateFormatter.timeStyle = .medium
 
+        // Add a state change closure, the state can also be read from the `sithsManager.state` property directly
         sithsManager.stateClosure = { [weak self] state in
-            guard let `self` = self else {
+            self?.log(message: "State changed: \(state)")
+
+            guard let stateLabel = self?.stateLabel else {
                 return
             }
 
-            self.log(message: "State changed: \(state)")
-
+            // Switch for the different states
             switch state {
             case .unknown:
-                self.stateLabel.textColor = .black
-                self.stateLabel.text = "Unknown"
+                stateLabel.textColor = .black
+                stateLabel.text = "Unknown"
             case .readingFromCard:
-                self.stateLabel.textColor = .black
-                self.stateLabel.text = "Reading From Card..."
+                stateLabel.textColor = .black
+                stateLabel.text = "Reading From Card..."
             case .error(let error):
-                self.stateLabel.textColor = .red
-                self.stateLabel.text = "Error \(error)"
+                stateLabel.textColor = .red
+                stateLabel.text = "Error \(error)"
             case .readerDisconnected:
-                self.stateLabel.textColor = .red
-                self.stateLabel.text = "Reader Disconnected"
+                stateLabel.textColor = .red
+                stateLabel.text = "Reader Disconnected"
             case .unknownCardInserted:
-                self.stateLabel.textColor = .red
-                self.stateLabel.text = "Unknown Card Inserted"
+                stateLabel.textColor = .red
+                stateLabel.text = "Unknown Card Inserted"
             case .cardWithoutCertificatesInserted:
-                self.stateLabel.textColor = .red
-                self.stateLabel.text = "SITHS Card Without Certificates Inserted"
+                stateLabel.textColor = .red
+                stateLabel.text = "SITHS Card Without Certificates Inserted"
             case .readerConnected:
-                self.stateLabel.textColor = .blue
-                self.stateLabel.text = "Reader Connected"
+                stateLabel.textColor = .blue
+                stateLabel.text = "Reader Connected"
             case .cardInserted(let certificates):
-                self.stateLabel.textColor = .green
-
+                // We have a set of at least one SITHS certificate (see the `SITHSCardCertificate` struct for more information)
                 let strings = certificates.map { certificate in
                     return "• \(certificate.cardNumber) \(certificate.serialString) \(certificate.subject[.commonName] ?? "[No common name]")"
                 }
-
-                self.stateLabel.text = "SITHS Card Inserted:\n\(strings.joined(separator: "\n"))"
+                
+                stateLabel.textColor = .green
+                stateLabel.text = "SITHS Card Inserted:\n\(strings.joined(separator: "\n"))"
             }
         }
 
