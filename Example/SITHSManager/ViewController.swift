@@ -70,7 +70,7 @@ class ViewController: UIViewController {
                 self.stateLabel.textColor = .green
 
                 let strings = certificates.map { certificate in
-                    return "• \(certificate.cardNumber) \(certificate.serialString) \(certificate.subject[.commonName])"
+                    return "• \(certificate.cardNumber) \(certificate.serialString) \(certificate.subject[.commonName] ?? "[No common name]")"
                 }
 
                 self.stateLabel.text = "SITHS Card Inserted:\n\(strings.joined(separator: "\n"))"
