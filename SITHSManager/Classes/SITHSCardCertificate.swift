@@ -18,7 +18,7 @@
 
 import Foundation
 
-struct KeyUsage: OptionSetType {
+struct KeyUsage: OptionSet {
     let rawValue: UInt8
 
     static let DigitalSignature = KeyUsage(rawValue: 0b10000000)
@@ -31,44 +31,46 @@ struct KeyUsage: OptionSetType {
 }
 
 public enum ASN1ObjectIdentifier: Hashable {
-    case Undefined(bytes: [UInt8])
-    case SHA1WithRSAEncryption
-    case CountryName
-    case OrganizationName
-    case CommonName
-    case Surname
-    case GivenName
-    case SerialNumber
-    case Title
-    case KeyUsage
-    case SubjectDirectoryAttributes
-    case CardNumber
+    case undefined(data: Data)
+    case sha1WithRSAEncryption
+    case countryName
+    case organizationName
+    case commonName
+    case surname
+    case givenName
+    case serialNumber
+    case title
+    case keyUsage
+    case subjectDirectoryAttributes
+    case cardNumber
 
-    init(bytes: [UInt8]) {
+    init(data: Data) {
+        let bytes = [UInt8](data)
+
         if bytes == [0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x05] { // 1.2.840.113549.1.1.5
-            self = .SHA1WithRSAEncryption
+            self = .sha1WithRSAEncryption
         } else if bytes == [0x55, 0x04, 0x06] { // 2.5.4.6
-            self = .CountryName
+            self = .countryName
         } else if bytes == [0x55, 0x04, 0x0A] { // 2.5.4.10
-            self = .OrganizationName
+            self = .organizationName
         } else if bytes == [0x55, 0x04, 0x03] { // 2.5.4.3
-            self = .CommonName
+            self = .commonName
         } else if bytes == [0x55, 0x04, 0x04] { // 2.5.4.4
-            self = .Surname
+            self = .surname
         } else if bytes == [0x55, 0x04, 0x2A] { // 2.5.4.42
-            self = .GivenName
+            self = .givenName
         } else if bytes == [0x55, 0x04, 0x05] { // 2.5.4.5
-            self = .SerialNumber
+            self = .serialNumber
         } else if bytes == [0x55, 0x04, 0x0C] { // 2.5.4.12
-            self = .Title
+            self = .title
         } else if bytes == [0x55, 0x1D, 0x0F] { // 2.5.29.15
-            self = .KeyUsage
+            self = .keyUsage
         } else if bytes == [0x55, 0x1D, 0x09] { // 2.5.29.9
-            self = .SubjectDirectoryAttributes
+            self = .subjectDirectoryAttributes
         } else if bytes == [0x2A, 0x85, 0x70, 0x22, 0x02, 0x01] { // 1.2.752.34.2.1
-            self = .CardNumber
+            self = .cardNumber
         } else {
-            self = .Undefined(bytes: bytes)
+            self = .undefined(data: data)
         }
     }
 
@@ -91,14 +93,14 @@ public struct SITHSCardCertificate: CustomStringConvertible, Equatable {
     public let rootElement: ASN1Element
 
     /// The raw DER data that was parsed to result in the certificate.
-    public let derData: NSData
+    public let derData: Data
 
     /// The SITHS card number as an unformatted string, for example "9752278900000000000"
     public let cardNumber: String
 
     /// The serial raw X.509 serial number data. By specification, this data represents a signed integer of maximum 20 bytes.
     /// NOTE: This is not to be confused with the HSAID ("SE000000000000-0000"), that is found on the subject OID .SerialNumber.
-    public let serialNumber: NSData
+    public let serialNumber: Data
 
     /// The `serialNumber` value represented as a uppercase HEX string without byte separators, example: "63D0DAC6F31D6BE4C68658C487863CC0"
     /// NOTE: This is not to be confused with the HSAID ("SE000000000000-0000"), that is found on the subject OID .SerialNumber.
@@ -122,7 +124,7 @@ public struct SITHSCardCertificate: CustomStringConvertible, Equatable {
     /// - Parameter derData: The raw DER data to parse.
     /// - Returns: A `SITHSCardCertificate` instance, if the parsing was succesfull, and the root ASN.1 element contained sufficent
     ///            details.
-    public init?(derData: NSData) {
+    public init?(derData: Data) {
         let parser = ASN1Parser(data: derData)
 
         guard let rootElement = parser.parseElement(), let certificate = rootElement.cardCertificate else {
@@ -139,29 +141,29 @@ public struct SITHSCardCertificate: CustomStringConvertible, Equatable {
     /// - Parameter rootElement: A parsed ASN.1 element of the certificate data contained in the `derData` parameter.
     /// - Parameter derData: The raw DER data to parse.
     /// - Returns: A `SITHSCardCertificate` instance, if the root ASN.1 element contained sufficent details.
-    public init?(rootElement: ASN1Element, derData: NSData) {
+    public init?(rootElement: ASN1Element, derData: Data) {
         self.rootElement = rootElement
         self.derData = derData
 
         switch rootElement {
-        case .Sequence(let elements):
+        case .sequence(let elements):
             guard elements.count >= 1 else {
                 // Root sequence does not have enough elements, fail
                 return nil
             }
 
             switch elements[0] {
-            case .Sequence(let elements):
+            case .sequence(let elements):
                 guard elements.count >= 8 else {
                     // Not enough elements in certificate Sequence, fail
                     return nil
                 }
 
                 switch elements[1] {
-                case .Integer(let value):
+                case .integer(let value):
                     serialNumber = value
 
-                    let strippedValue = value.length > 16 ? value.subdataWithRange(NSRange(location: value.length - 16, length: 16)) : value
+                    let strippedValue = value.count > 16 ? value.subdata(in: value.count-16..<value.count) : value
                     serialString = strippedValue.hexString(byteSeparator: false)
 
                 default:
@@ -172,17 +174,17 @@ public struct SITHSCardCertificate: CustomStringConvertible, Equatable {
                 var subject = [ASN1ObjectIdentifier: String]()
 
                 switch elements[5] {
-                case .Sequence(let subjectElements):
+                case .sequence(let subjectElements):
                     for subjectElement in subjectElements {
                         switch subjectElement {
-                        case .Set(let subjectItemElements):
+                        case .set(let subjectItemElements):
                             guard subjectItemElements.count >= 1 else {
                                 // Subject item did not contain enough elements, skip
                                 continue
                             }
 
                             switch subjectItemElements[0] {
-                            case .Sequence(let subjectItemSequenceElements):
+                            case .sequence(let subjectItemSequenceElements):
                                 guard subjectItemSequenceElements.count >= 2 else {
                                     // Subject item Sequence did not contain enough elements, skip
                                     continue
@@ -191,7 +193,7 @@ public struct SITHSCardCertificate: CustomStringConvertible, Equatable {
                                 let objectIdentifier: ASN1ObjectIdentifier
 
                                 switch subjectItemSequenceElements[0] {
-                                case .ObjectIdentifier(let value):
+                                case .objectIdentifier(let value):
                                     objectIdentifier = value
                                 default:
                                     // First subject item Sequence element was not Object Identifier, skip
@@ -199,9 +201,9 @@ public struct SITHSCardCertificate: CustomStringConvertible, Equatable {
                                 }
 
                                 switch subjectItemSequenceElements[1] {
-                                case .UTF8String(let value):
+                                case .utf8String(let value):
                                     subject[objectIdentifier] = value
-                                case .PrintableString(let value):
+                                case .printableString(let value):
                                     subject[objectIdentifier] = value
                                 default:
                                     // TODO: Support for more subject types, somtime in the future
@@ -230,37 +232,35 @@ public struct SITHSCardCertificate: CustomStringConvertible, Equatable {
                 for element in elements[7..<elements.count] {
                     // Go through optional certificate Sequence elements and look for Context Specific [3]
                     switch element {
-                    case .ContextSpecific(number: 3, let value):
+                    case .contextSpecific(number: 3, let value):
                         switch value {
-                        case .Elements(let elements):
+                        case .elements(let elements):
                             switch elements[0] {
-                            case .Sequence(let elements):
+                            case .sequence(let elements):
                                 for element in elements {
                                     switch element {
-                                    case .Sequence(let elements):
+                                    case .sequence(let elements):
                                         guard elements.count >= 2 else {
                                             // Context Specific [3] item Sequence did not contain enough elements, skip
                                             continue
                                         }
 
                                         switch elements[0] {
-                                        case .ObjectIdentifier(.KeyUsage):
+                                        case .objectIdentifier(.keyUsage):
                                             switch elements[2] {
-                                            case .OctetString(let value):
+                                            case .octetString(let value):
                                                 switch value {
-                                                case .Elements(let elements):
+                                                case .elements(let elements):
                                                     switch elements[0] {
-                                                    case .BitString(let value):
+                                                    case .bitString(let value):
                                                         switch value {
-                                                        case .RawValue(let value):
-                                                            guard value.length == 2 else {
+                                                        case .rawValue(let value):
+                                                            guard value.count == 2 else {
                                                                 // Key usage is not 2 bytes, skip
                                                                 continue
                                                             }
 
-                                                            var bytes = [UInt8](count: 2, repeatedValue: 0x00)
-                                                            value.getBytes(&bytes, length: 2)
-                                                            keyUsage = KeyUsage(rawValue: bytes[1])
+                                                            keyUsage = KeyUsage(rawValue: value[1])
                                                         default:
                                                             // Octet String Bit String element was not raw value, skip
                                                             continue
@@ -277,13 +277,13 @@ public struct SITHSCardCertificate: CustomStringConvertible, Equatable {
                                                 // Key Usage Sequence item was not Octet String, skip
                                                 continue
                                             }
-                                        case .ObjectIdentifier(.CardNumber):
+                                        case .objectIdentifier(.cardNumber):
                                             switch elements[1] {
-                                            case .OctetString(let value):
+                                            case .octetString(let value):
                                                 switch value {
-                                                case .Elements(let elements):
+                                                case .elements(let elements):
                                                     switch elements[0] {
-                                                    case .PrintableString(let value):
+                                                    case .printableString(let value):
                                                         cardNumber = value
                                                     default:
                                                         // Parsed Card Number Sequence Octet String element was not Printable String, skip

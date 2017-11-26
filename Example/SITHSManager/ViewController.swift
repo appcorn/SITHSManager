@@ -14,66 +14,66 @@ class ViewController: UIViewController {
     @IBOutlet weak var logTextView: UITextView!
     @IBOutlet weak var stateLabel: UILabel!
     let sithsManager = SITHSManager()
-    let dateFormatter = NSDateFormatter()
-    var logPath: String!
-    var logOutput: NSOutputStream!
+    let dateFormatter = DateFormatter()
+    var logPath: URL!
+    var logOutput: OutputStream!
 
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        let paths = NSSearchPathForDirectoriesInDomains(.DocumentDirectory, .UserDomainMask, true)
-        let documentsDirectory: NSString = paths[0]
-        logPath = documentsDirectory.stringByAppendingPathComponent("log.txt")
-        logOutput = NSOutputStream(toFileAtPath: logPath, append: true)
+        let paths = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)
+        let documentsDirectory = URL(fileURLWithPath: paths[0])
+        logPath = documentsDirectory.appendingPathComponent("log.txt")
+        logOutput = OutputStream(url: logPath, append: true)
         logOutput.open()
 
         do {
-            let previousLog = try String(contentsOfFile: logPath)
+            let previousLog = try String(contentsOf: logPath)
             print(previousLog)
         } catch {
             // Do nothing
         }
 
-        dateFormatter.dateStyle = .NoStyle
-        dateFormatter.timeStyle = .MediumStyle
+        dateFormatter.dateStyle = .none
+        dateFormatter.timeStyle = .medium
 
         sithsManager.stateClosure = { [weak self] state in
             guard let `self` = self else {
                 return
             }
 
-            self.logMessage("State changed: \(state)")
+            self.log(message: "State changed: \(state)")
 
             switch state {
-            case .Unknown:
-                self.stateLabel.textColor = UIColor.blackColor()
+            case .unknown:
+                self.stateLabel.textColor = .black
                 self.stateLabel.text = "Unknown"
-            case .ReadingFromCard:
-                self.stateLabel.textColor = UIColor.blackColor()
+            case .readingFromCard:
+                self.stateLabel.textColor = .black
                 self.stateLabel.text = "Reading From Card..."
-            case .Error(let error):
-                self.stateLabel.textColor = UIColor.redColor()
+            case .error(let error):
+                self.stateLabel.textColor = .red
                 self.stateLabel.text = "Error \(error)"
-            case .ReaderDisconnected:
-                self.stateLabel.textColor = UIColor.redColor()
+            case .readerDisconnected:
+                self.stateLabel.textColor = .red
                 self.stateLabel.text = "Reader Disconnected"
-            case .UnknownCardInserted:
-                self.stateLabel.textColor = UIColor.redColor()
+            case .unknownCardInserted:
+                self.stateLabel.textColor = .red
                 self.stateLabel.text = "Unknown Card Inserted"
-            case .CardWithoutCertificatesInserted:
-                self.stateLabel.textColor = UIColor.redColor()
+            case .cardWithoutCertificatesInserted:
+                self.stateLabel.textColor = .red
                 self.stateLabel.text = "SITHS Card Without Certificates Inserted"
-            case .ReaderConnected:
-                self.stateLabel.textColor = UIColor.blueColor()
+            case .readerConnected:
+                self.stateLabel.textColor = .blue
                 self.stateLabel.text = "Reader Connected"
-            case .CardInserted(let certificates):
-                self.stateLabel.textColor = UIColor.greenColor()
+            case .cardInserted(let certificates):
+                self.stateLabel.textColor = .green
 
                 let strings = certificates.map { certificate in
-                    return "• \(certificate.cardNumber) \(certificate.serialString) \(certificate.subject[.CommonName])"
+                    return "• \(certificate.cardNumber) \(certificate.serialString) \(certificate.subject[.commonName] ?? "[No common name]")"
                 }
 
-                self.stateLabel.text = "SITHS Card Inserted:\n\(strings.joinWithSeparator("\n"))"
+                self.stateLabel.text = "SITHS Card Inserted:\n\(strings.joined(separator: "\n"))"
             }
         }
 
@@ -82,39 +82,37 @@ class ViewController: UIViewController {
                 return
             }
 
-            self.logMessage(message)
+            self.log(message: message)
         }
     }
 
-    func logMessage(message: String) {
+    func log(message: String) {
         NSLog("%@", message)
 
-        let timestamp = dateFormatter.stringFromDate(NSDate())
-        logTextView.text = "[\(timestamp)] \(message)\n\(logTextView.text)"
+        let timestamp = dateFormatter.string(from: Date())
+        logTextView.text = "[\(timestamp)] \(message)\n\(logTextView.text!)"
 
-        if let logData = "[\(timestamp)] \(message)\n".dataUsingEncoding(NSUTF8StringEncoding) {
-            var bytes = [UInt8](count: logData.length, repeatedValue: 0xFF)
-            logData.getBytes(&bytes, range: NSRange(location: 0, length: logData.length))
-
-            logOutput.write(bytes, maxLength: logData.length)
+        if let logData = "[\(timestamp)] \(message)\n".data(using: String.Encoding.utf8) {
+            let _ = logData.withUnsafeBytes{ (pointer: UnsafePointer<UInt8>) in
+                self.logOutput.write(pointer, maxLength: logData.count)
+            }
         }
     }
 
-    @IBAction func exportButtonPressed(sender: UIButton) {
+    @IBAction func exportButtonPressed(_ sender: UIButton) {
         self.logOutput.close()
 
-        let url = NSURL(fileURLWithPath: logPath)
-        let activityVC = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+        let activityVC = UIActivityViewController(activityItems: [logPath], applicationActivities: nil)
         activityVC.popoverPresentationController?.sourceView = sender
         activityVC.completionWithItemsHandler = { [weak self] _, _, _, _ in
             guard let `self` = self else {
                 return
             }
-            let _ = try? NSFileManager.defaultManager().removeItemAtPath(self.logPath)
-            self.logOutput = NSOutputStream(toFileAtPath: self.logPath, append: true)
+            let _ = try? FileManager.default.removeItem(at: self.logPath)
+            self.logOutput = OutputStream(url: self.logPath, append: true)
             self.logOutput.open()
             self.logTextView.text = ""
         }
-        self.presentViewController(activityVC, animated: true, completion: nil)
+        self.present(activityVC, animated: true, completion: nil)
     }
 }

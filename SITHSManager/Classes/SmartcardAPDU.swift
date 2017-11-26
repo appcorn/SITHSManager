@@ -18,24 +18,24 @@
 
 import Foundation
 
-enum SmartcardCommandError: ErrorType {
-    case CommandDataTooLarge
-    case ResponseTooSmall
+enum SmartcardCommandError: Error {
+    case commandDataTooLarge
+    case responseTooSmall
 }
 
 struct SmartcardCommandAPDU {
     let instructionClass: UInt8
     let instructionCode: UInt8
     let instructionParameters: [UInt8]
-    let commandData: [UInt8]?
+    let commandData: Data?
     let expectedResponseBytes: UInt16?
 
-    func mergedCommand() throws -> [UInt8] {
-        var returnCommand = [UInt8]()
+    func mergedCommand() throws -> Data {
+        var returnCommand = Data()
 
         returnCommand.append(instructionClass)
         returnCommand.append(instructionCode)
-        returnCommand.appendContentsOf(instructionParameters)
+        returnCommand.append(contentsOf: instructionParameters)
 
         var commandDataPresent: Bool
 
@@ -51,10 +51,10 @@ struct SmartcardCommandAPDU {
                 returnCommand.append(UInt8(truncatingBitPattern: length >> 8))
                 returnCommand.append(UInt8(truncatingBitPattern: length))
             } else {
-                throw SmartcardCommandError.CommandDataTooLarge
+                throw SmartcardCommandError.commandDataTooLarge
             }
 
-            returnCommand.appendContentsOf(commandData)
+            returnCommand.append(contentsOf: commandData)
         } else {
             commandDataPresent = false
         }
@@ -84,7 +84,9 @@ enum ProcessingStatus {
     case incorrectInstructionParameters
     case unknown(statusCode: [UInt8])
 
-    init(bytes: [UInt8]) {
+    init(data: Data) {
+        let bytes = [UInt8](data)
+
         if bytes == [0x90, 0x00] {
             self = .success
         } else if bytes == [0x6a, 0x82] {
@@ -102,19 +104,18 @@ enum ProcessingStatus {
 }
 
 struct SmartcardResponseAPDU: CustomStringConvertible {
-    let responseData: NSData?
+    let responseData: Data?
     let processingStatus: ProcessingStatus
 
-    init(bytes: [UInt8]) throws {
-        guard bytes.count >= 2 else {
-            throw SmartcardCommandError.ResponseTooSmall
+    init(data: Data) throws {
+        guard data.count >= 2 else {
+            throw SmartcardCommandError.responseTooSmall
         }
 
-        processingStatus = ProcessingStatus(bytes: Array(bytes[bytes.count-2..<bytes.count]))
+        processingStatus = ProcessingStatus(data: data.subdata(in: data.count-2..<data.count))
 
-        if bytes.count > 2 {
-            let pointer = UnsafePointer<UInt8>(bytes)
-            responseData = NSData(bytes: pointer, length: bytes.count - 2)
+        if data.count > 2 {
+            responseData = data.subdata(in: 0..<data.count-2)
         } else {
             responseData = nil
         }

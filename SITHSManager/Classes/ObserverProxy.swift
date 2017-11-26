@@ -22,7 +22,7 @@ import Foundation
  Simple Proxy class to enable closure based NSNotificaionCenter observers.
  */
 class ObserverProxy {
-    let closure: (NSNotification) -> ();
+    let closure: (Notification) -> ();
 
     /**
      Creates and registers an observer for the provided parameters.
@@ -35,10 +35,10 @@ class ObserverProxy {
      - returns: The registered observer proxy. Note that the caller of this init method is responsibe for storing the observer proxy. When
      the object is deinited, the observation is removed from `NSNotificationCenter`
      */
-    init(name: String, object: AnyObject?, closure: (NSNotification) -> ()) {
+    init(name: NSNotification.Name, object: AnyObject?, closure: @escaping (Notification) -> ()) {
         self.closure = closure
 
-        NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(self.handler(_:)), name: name, object: object);
+        NotificationCenter.default.addObserver(self, selector: #selector(self.handler), name: name, object: object);
     }
 
     deinit {
@@ -49,10 +49,10 @@ class ObserverProxy {
      Manually removes the observer from `NSNotificationCenter`
      */
     func stop() {
-        NSNotificationCenter.defaultCenter().removeObserver(self);
+        NotificationCenter.default.removeObserver(self);
     }
 
-    dynamic func handler(notification: NSNotification) {
+    dynamic func handler(notification: Notification) {
         closure(notification);
     }
 }
