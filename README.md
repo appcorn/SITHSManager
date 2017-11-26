@@ -37,35 +37,35 @@ class ViewController: UIViewController {
       
       // Switch for the different states
       switch state {
-      case .Unknown:
-        stateLabel.textColor = UIColor.blackColor()
+      case .unknown:
+        stateLabel.textColor = .black
         stateLabel.text = "Unknown"
-      case .ReadingFromCard:
-        stateLabel.textColor = UIColor.blackColor()
+      case .readingFromCard:
+        stateLabel.textColor = .black
         stateLabel.text = "Reading From Card..."
-      case .Error(let error):
-        stateLabel.textColor = UIColor.redColor()
+      case .error(let error):
+        stateLabel.textColor = .red
         stateLabel.text = "Error \(error)"
-      case .ReaderDisconnected:
-        stateLabel.textColor = UIColor.redColor()
+      case .readerDisconnected:
+        stateLabel.textColor = .red
         stateLabel.text = "Reader Disconnected"
-      case .UnknownCardInserted:
-        stateLabel.textColor = UIColor.redColor()
+      case .unknownCardInserted:
+        stateLabel.textColor = .red
         stateLabel.text = "Unknown Card Inserted"
-      case .CardWithoutCertificatesInserted:
-        stateLabel.textColor = UIColor.redColor()
+      case .cardWithoutCertificatesInserted:
+        stateLabel.textColor = .red
         stateLabel.text = "SITHS Card Without Certificates Inserted"
-      case .ReaderConnected:
-        stateLabel.textColor = UIColor.blueColor()
+      case .readerConnected:
+        stateLabel.textColor = .blue
         stateLabel.text = "Reader Connected"
-      case .CardInserted(let certificates):
+      case .cardInserted(let certificates):
         // We have a set of at least one SITHS certificate (see the `SITHSCardCertificate` struct for more information)
         let strings = certificates.map { certificate in
-          return "• \(certificate.cardNumber) \(certificate.serialString) \(certificate.subject[.CommonName])"
+          return "• \(certificate.cardNumber) \(certificate.serialString) \(certificate.subject[.commonName] ?? "[No common name]")"
         }
         
-        stateLabel.textColor = UIColor.greenColor()
-        stateLabel.text = "SITHS Card Inserted:\n\(strings.joinWithSeparator("\n"))"
+        stateLabel.textColor = .green
+        stateLabel.text = "SITHS Card Inserted:\n\(strings.joined(separator: "\n"))"
       }
     }
   }
