@@ -52,7 +52,7 @@ class ObserverProxy {
         NotificationCenter.default.removeObserver(self);
     }
 
-    dynamic func handler(notification: Notification) {
+    @objc dynamic func handler(notification: Notification) {
         closure(notification);
     }
 }

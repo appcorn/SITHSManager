@@ -48,8 +48,8 @@ struct SmartcardCommandAPDU {
                 returnCommand.append(0x00)
 
                 let length = UInt16(commandData.count)
-                returnCommand.append(UInt8(truncatingBitPattern: length >> 8))
-                returnCommand.append(UInt8(truncatingBitPattern: length))
+                returnCommand.append(UInt8(truncatingIfNeeded: length >> 8))
+                returnCommand.append(UInt8(truncatingIfNeeded: length))
             } else {
                 throw SmartcardCommandError.commandDataTooLarge
             }
@@ -67,8 +67,8 @@ struct SmartcardCommandAPDU {
                     returnCommand.append(0x00)
                 }
 
-                returnCommand.append(UInt8(truncatingBitPattern: expectedResponseBytes >> 8))
-                returnCommand.append(UInt8(truncatingBitPattern: expectedResponseBytes))
+                returnCommand.append(UInt8(truncatingIfNeeded: expectedResponseBytes >> 8))
+                returnCommand.append(UInt8(truncatingIfNeeded: expectedResponseBytes))
             }
         }
 
