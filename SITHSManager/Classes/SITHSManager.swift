@@ -563,8 +563,8 @@ open class SITHSManager {
                 instructionClass: 0x00,
                 instructionCode: 0xB0,
                 instructionParameters: [
-                    UInt8(truncatingBitPattern: offset >> 8),
-                    UInt8(truncatingBitPattern: offset)
+                    UInt8(truncatingIfNeeded: offset >> 8),
+                    UInt8(truncatingIfNeeded: offset)
                 ],
                 commandData: nil,
                 expectedResponseBytes: chunkSize
