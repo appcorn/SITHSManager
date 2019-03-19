@@ -91,4 +91,4 @@ Martin Alléus, Appcorn AB, martin@appcorn.se
 
 ## License
 
-Copyright (c) 2017 [Svensk e-identitet AB](http://www.e-identitet.se). SITHSManager is available under the MIT license. See the LICENSE file for more info.
+Copyright (c) 2019 [Svensk e-identitet AB](http://www.e-identitet.se). SITHSManager is available under the MIT license. See the LICENSE file for more info.
