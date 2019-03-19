@@ -168,8 +168,8 @@ open class SITHSManager {
         observers.append(ObserverProxy(name: .init(rawValue: "PB_CARD_REMOVED"), object: nil, closure: cardRemoved))
         observers.append(ObserverProxy(name: .PBAccessoryDidConnect, object: nil, closure: accessoryConnected))
         observers.append(ObserverProxy(name: .PBAccessoryDidDisconnect, object: nil, closure: accessoryDisconnected))
-        observers.append(ObserverProxy(name: .UIApplicationDidBecomeActive, object: nil, closure: applicationDidBecomeActive))
-        observers.append(ObserverProxy(name: .UIApplicationWillResignActive, object: nil, closure: applicationWillResignActive))
+        observers.append(ObserverProxy(name: UIApplication.didBecomeActiveNotification, object: nil, closure: applicationDidBecomeActive))
+        observers.append(ObserverProxy(name: UIApplication.willResignActiveNotification, object: nil, closure: applicationWillResignActive))
     }
 
     fileprivate func applicationDidBecomeActive(notification: Notification) {
@@ -610,6 +610,7 @@ open class SITHSManager {
 
     fileprivate func transmit(command: SmartcardCommandAPDU) throws -> SmartcardResponseAPDU {
         var mergedCommand = try command.mergedCommand()
+        let commandLength = mergedCommand.count
 
         var receivedDataLength: UInt16 = 0xFF
 
@@ -619,12 +620,12 @@ open class SITHSManager {
 
         var receivedData = Data(count: Int(receivedDataLength))
 
-        log(message: "Transmitting \(mergedCommand.count) >>> \(mergedCommand.hexString())")
+        log(message: "Transmitting \(commandLength) >>> \(mergedCommand.hexString())")
 
-        let result = receivedData.withUnsafeMutableBytes { (receivedDataPointer: UnsafeMutablePointer<UInt8>) in
-            return mergedCommand.withUnsafeMutableBytes { (mergedCommandPointer: UnsafeMutablePointer<UInt8>) in
+        let result = mergedCommand.withUnsafeMutableBytes { (mergedCommandPointer: UnsafeMutablePointer<UInt8>) in
+            return receivedData.withUnsafeMutableBytes { (receivedDataPointer: UnsafeMutablePointer<UInt8>) in
                 return self.smartcard.transmit(mergedCommandPointer,
-                                               withCommandLength: UInt16(mergedCommand.count),
+                                               withCommandLength: UInt16(commandLength),
                                                andResponseBuffer: receivedDataPointer,
                                                andResponseLength: &receivedDataLength)
             }
