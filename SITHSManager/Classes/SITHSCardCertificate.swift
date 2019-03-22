@@ -247,7 +247,11 @@ public struct SITHSCardCertificate: CustomStringConvertible, Equatable {
 
                                         switch elements[0] {
                                         case .objectIdentifier(.keyUsage):
-                                            switch elements[2] {
+                                            guard let element = elements[safe: 2] else {
+                                                // Not enough elements, skip
+                                                continue
+                                            }
+                                            switch element {
                                             case .octetString(let value):
                                                 switch value {
                                                 case .elements(let elements):
