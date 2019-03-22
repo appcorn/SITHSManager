@@ -1,11 +1,11 @@
 use_frameworks!
 
 target 'SITHSManager_Example' do
+  platform :ios, '8.0'
+
   pod 'SITHSManager', :path => '../'
 
   target 'SITHSManager_Tests' do
     inherit! :search_paths
-
-    
   end
 end
