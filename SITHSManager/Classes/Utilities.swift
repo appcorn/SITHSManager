@@ -116,14 +116,3 @@ extension Collection {
         return index <= endIndex ? self[index] : nil
     }
 }
-
-extension UnsafeMutablePointer {
-    /// Creates an array containing the values at the pointer.
-    ///
-    /// - Parameter count: Number of bytes to read from the pointer.
-    /// - Returns: An array, conatining the bytes of data at the pointer.
-    func valueArray(count: Int) -> [Pointee] {
-        let buffer = UnsafeBufferPointer(start: self, count: count)
-        return Array(buffer)
-    }
-}
