@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'SITHSManager'
-  s.version          = '1.2.1'
+  s.version          = '1.2.2'
   s.summary          = 'SITHS Smart Card manager module.'
 
   s.description      = <<-DESC
