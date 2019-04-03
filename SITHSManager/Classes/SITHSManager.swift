@@ -623,6 +623,7 @@ open class SITHSManager {
             switch readBinaryResponse.processingStatus {
             case .incorrectExpectedResponseBytes(let correctExpectedResponseBytes):
                 chunkSize = UInt16(correctExpectedResponseBytes)
+                readingDone = false
             case .success:
                 guard let responseData = readBinaryResponse.responseData else {
                     throw SITHSManagerError.internalError(error: nil)
