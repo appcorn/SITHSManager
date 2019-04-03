@@ -82,6 +82,7 @@ enum ProcessingStatus {
     case incorrectExpectedResponseBytes(correctExpectedResponseBytes: UInt8)
     case fileNotFound
     case incorrectInstructionParameters
+    case commandIncompatibleWithFileStructure
     case unknown(statusCode: [UInt8])
 
     init(data: Data) {
@@ -93,6 +94,8 @@ enum ProcessingStatus {
             self = .fileNotFound
         } else if bytes == [0x6a, 0x86] {
             self = .incorrectInstructionParameters
+        } else if bytes == [0x69, 0x81] {
+            self = .commandIncompatibleWithFileStructure
         } else if bytes[0] == 0x61 {
             self = .successWithResponse(availableBytes: bytes[1])
         } else if bytes[0] == 0x6c {
