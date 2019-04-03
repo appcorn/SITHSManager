@@ -18,6 +18,16 @@
 
 import Foundation
 
+struct ObjectValueReference: Equatable, CustomStringConvertible {
+    let identifier: [UInt8]
+    let index: UInt?
+    let length: UInt?
+
+    var description: String {
+        return "<ObjectValueReference> identifier: \(identifier.hexString()) index: \(String(describing: index)) length: \(String(describing: length))"
+    }
+}
+
 enum TypeTag {
     case universal(typeTag: UniversalTypeTag)
     case application(number: UInt8)
