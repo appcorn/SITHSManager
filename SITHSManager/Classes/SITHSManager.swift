@@ -289,6 +289,11 @@ open class SITHSManager {
                         let reference = references.removeFirst()
                         readReferences.append(reference)
 
+                        if reference.length == .some(0) {
+                            // This is a reference to a linear record file and not a transparent file, skip reading
+                            continue
+                        }
+
                         log(message: "Read loop iteration, reading from reference \(reference)")
 
                         let _ = try transmitSelectFileAndGetResponse(identifier: reference.identifier)
