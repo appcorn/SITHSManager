@@ -282,25 +282,30 @@ open class SITHSManager {
                     internalState = .readingFromCard
 
                     // The initial address is the EF.ODF file identifier
-                    var identifiers: [[UInt8]] = [[0x50, 0x31]]
-                    var readIdentifiers: [[UInt8]] = []
+                    var references: [ObjectValueReference] = [ObjectValueReference(identifier: [0x50, 0x31], index: nil, length: nil)]
+                    var readReferences: [ObjectValueReference] = []
 
-                    while identifiers.count > 0 {
-                        let identifier = identifiers.removeFirst()
-                        readIdentifiers.append(identifier)
+                    while references.count > 0 {
+                        let reference = references.removeFirst()
+                        readReferences.append(reference)
 
-                        log(message: "Read loop iteration, reading from identifier \(identifier.hexString())")
+                        if reference.length == .some(0) {
+                            // This is a reference to a linear record file and not a transparent file, skip reading
+                            continue
+                        }
 
-                        let _ = try transmitSelectFileAndGetResponse(identifier: identifier)
-                        let efData = try transmitReadBinary()
+                        log(message: "Read loop iteration, reading from reference \(reference)")
+
+                        let _ = try transmitSelectFileAndGetResponse(identifier: reference.identifier)
+                        let efData = try transmitReadBinary(offset: reference.index, length: reference.length)
                         let efParser = ASN1Parser(data: efData)
 
                         while let parsed = efParser.parseElement() {
                             log(message: "Parsed: \(parsed)")
 
-                            if let foundIdentifier = getCardEFIdentifier(element: parsed.element) {
-                                if !identifiers.contains(where: { $0 == foundIdentifier }) && !readIdentifiers.contains(where: { $0 == foundIdentifier }) {
-                                    identifiers.append(foundIdentifier)
+                            if let foundReference = getCardEFObjectValueReference(element: parsed.element) {
+                                if !references.contains(where: { $0 == foundReference }) && !readReferences.contains(where: { $0 == foundReference }) {
+                                    references.append(foundReference)
                                 }
                             }
 
@@ -352,7 +357,7 @@ open class SITHSManager {
         }
     }
 
-    fileprivate func getCardEFIdentifier(element: ASN1Element) -> [UInt8]? {
+    fileprivate func getCardEFObjectValueReference(element: ASN1Element) -> ObjectValueReference? {
         switch element {
         case .contextSpecific(_, let elementsOrRawValue):
             switch elementsOrRawValue {
@@ -384,10 +389,11 @@ open class SITHSManager {
                             }
 
                             let identifier = [UInt8](value[2...3])
+                            let reference = ObjectValueReference(identifier: identifier, index: nil, length: nil)
 
-                            log(message: "Found identifier \(identifier)")
+                            log(message: "Found reference in Context Specific element: \(reference)")
 
-                            return identifier
+                            return reference
                         case .elements:
                             log(message: "Sequence Octet String was not raw value, skip")
                             // Sequence Octet String was not raw value, skip
@@ -436,13 +442,13 @@ open class SITHSManager {
 
                         switch element {
                         case .sequence(let elements):
-                            guard let element = elements.first else {
+                            guard let identifierElement = elements[safe: 0] else {
                                 log(message: "First Sequence does not have enough elements, skip")
                                 // First Sequence does not have enough elements, skip
                                 break
                             }
 
-                            switch element {
+                            switch identifierElement {
                             case .octetString(let value):
                                 switch value {
                                 case .rawValue(let value):
@@ -461,10 +467,40 @@ open class SITHSManager {
                                     }
                                     
                                     let identifier = [UInt8](value[2...3])
+                                    var index: UInt? = nil
+                                    var length: UInt? = nil
 
-                                    log(message: "Found identifier \(identifier)")
+                                    if let indexElement = elements[safe: 1] {
+                                        switch indexElement {
+                                        case .integer(let value):
+                                            index = value.uintValue()
+                                        default:
+                                            // Do nothing
+                                            break
+                                        }
+                                    }
 
-                                    return identifier
+                                    if let lengthElement = elements[safe: 2] {
+                                        switch lengthElement {
+                                        case .contextSpecific(number: 0, let value):
+                                            switch value {
+                                            case .rawValue(let value):
+                                                length = value.uintValue()
+                                            default:
+                                                // Do nothing
+                                                break
+                                            }
+                                        default:
+                                            // Do nothing
+                                            break
+                                        }
+                                    }
+
+                                    let reference = ObjectValueReference(identifier: identifier, index: index, length: length)
+
+                                    log(message: "Found reference in Sequence element: \(reference)")
+
+                                    return reference
                                 default:
                                     log(message: "Sequence Octet String was not raw value, skip")
                                     // Sequence Octet String was not raw value, skip
@@ -548,11 +584,23 @@ open class SITHSManager {
         }
     }
 
-    fileprivate func transmitReadBinary() throws -> Data {
+    fileprivate func transmitReadBinary(offset: UInt?, length: UInt?) throws -> Data {
         var dataBuffer = Data()
-        var offset: UInt16 = 0
-        var chunkSize: UInt16 = 0xFF
         var readingDone = false
+
+        var unwrappedOffset: UInt16
+        if let offset = offset {
+            unwrappedOffset = UInt16(offset)
+        } else {
+            unwrappedOffset = 0
+        }
+
+        var chunkSize: UInt16
+        if let length = length {
+            chunkSize = UInt16(min(length, 0xFF))
+        } else {
+            chunkSize = 0xFF
+        }
 
         while !readingDone {
             if chunkSize < 0xFF {
@@ -563,8 +611,8 @@ open class SITHSManager {
                 instructionClass: 0x00,
                 instructionCode: 0xB0,
                 instructionParameters: [
-                    UInt8(truncatingIfNeeded: offset >> 8),
-                    UInt8(truncatingIfNeeded: offset)
+                    UInt8(truncatingIfNeeded: unwrappedOffset >> 8),
+                    UInt8(truncatingIfNeeded: unwrappedOffset)
                 ],
                 commandData: nil,
                 expectedResponseBytes: chunkSize
@@ -575,6 +623,7 @@ open class SITHSManager {
             switch readBinaryResponse.processingStatus {
             case .incorrectExpectedResponseBytes(let correctExpectedResponseBytes):
                 chunkSize = UInt16(correctExpectedResponseBytes)
+                readingDone = false
             case .success:
                 guard let responseData = readBinaryResponse.responseData else {
                     throw SITHSManagerError.internalError(error: nil)
@@ -598,7 +647,7 @@ open class SITHSManager {
                     }
                 }
 
-                offset += UInt16(responseData.count)
+                unwrappedOffset += UInt16(responseData.count)
                 dataBuffer.append(responseData)
             default:
                 throw SITHSManagerError.internalError(error: nil)
